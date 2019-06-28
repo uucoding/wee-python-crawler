@@ -40,7 +40,7 @@ class CrawlerRequest(ProxyIpPool):
 
     def search_url(self, formart_url, search_key):
         '''
-        模版url的转化
+            模版url的转化：参考__main__的示例
         :param formart_url: 模版URL 使用{}设置模版
         :param search_key:  需要替换模版的变量 - 集合形式
         :return:
@@ -79,12 +79,9 @@ class CrawlerRequest(ProxyIpPool):
             use_proxies = True
             # 代理不稳定：本地不使用代理
             # use_proxies = False
-        count = 1
-        #出错后重试：允许重试两次,两次不成功返回空字符串
+        #重试次数：出错后重试：允许重试两次,两次不成功返回空字符串
+        count = 0
         while(True):
-            print("请求【%s】第【%d】次" % (url, count))
-            if count == 3:
-                return ''
             try:
                 # 判断请求方式
                 if method == 'GET':
@@ -102,18 +99,24 @@ class CrawlerRequest(ProxyIpPool):
                 else:
                     print("暂不支持该请求%s" % method)
             except:
-                print("=============")
-                #重试
+                # 重试
                 count += 1
+                #最多重试两次
+                if count == 3:
+                    return ""
+                print("请求【%s】第【%d】次重试" % (url, count))
                 continue
             break
         #清除cookie
         if clear_cookie:
             self.session.cookies.clear()
         #设置编码
-        response.encoding = 'urf-8'
+        response.encoding = 'utf-8'
         return response.text;
 
 
 if __name__ == '__main__':
-    pass
+    crawler = CrawlerRequest()
+    formart_url = "https://www.lagou.com/jobs/list_{}?city={}"
+    url = crawler.search_url(formart_url, ['前端','北京'])
+    print(url)
