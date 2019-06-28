@@ -73,7 +73,7 @@ class ProxyIpPool(object):
 
     def __crawler_proxy_ip(self):
         '''
-            爬取代理ip（只获取第一页，越往后越不稳定）：https://www.xicidaili.com/nn/1
+            爬取代理ip（只获取第一页，越往后ip越不稳定）：https://www.xicidaili.com/nn/1
         :return:
         '''
         proxy_ip_url = 'https://www.xicidaili.com/nn/1';

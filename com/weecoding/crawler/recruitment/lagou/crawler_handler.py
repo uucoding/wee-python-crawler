@@ -24,7 +24,8 @@ class LagouCrawler:
 
     #获取所有的岗位
     def crawler_work_type_list(self):
-        crawler = CrawlerRequest()
+        # todo 等待完善
+        pass
 
     def crawler_city_list(self):
         '''
@@ -117,10 +118,11 @@ class LagouCrawler:
 
 if __name__ == '__main__':
     lagouCrawler = LagouCrawler()
+    #获取城市信息
     lagouCrawler.crawler_city_list()
     #引入多进程
     processPool = multiprocessing.Pool(3)
-    print(lagouCrawler.city_list)
+    #
     for city in lagouCrawler.city_list:
         processPool.apply_async(lagouCrawler.crawler_job_info, args=('python', '北京'))
         break;

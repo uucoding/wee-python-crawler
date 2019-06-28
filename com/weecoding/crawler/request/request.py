@@ -116,7 +116,4 @@ class CrawlerRequest(ProxyIpPool):
 
 
 if __name__ == '__main__':
-    crawler = CrawlerRequest()
-    formart_url = "https://www.lagou.com/jobs/list_{}?city={}"
-    url = crawler.search_url(formart_url, ['前端','北京'])
-    print(url)
+    pass
