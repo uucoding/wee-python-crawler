@@ -5,7 +5,7 @@ import re
 import time
 import multiprocessing
 
-from com.weecoding.crawler.recruitment.lagou.lagou_sql_operate import lagouSqlOperate
+from com.weecoding.crawler.web.lagou.lagou_sql_operate import lagouSqlOperate
 from com.weecoding.crawler.request.request import CrawlerRequest
 from com.weecoding.crawler.utils.string_utils import StringUtils
 
@@ -25,11 +25,20 @@ class LagouCrawler:
         self.work_type_list = ''
         #获取基础的爬虫请求
         self.crawler_request = CrawlerRequest()
+        #异常类别数据：work_type:city_list
+        self.except_data = {}
 
     #获取所有的岗位
     def crawler_work_type_list(self):
-        # todo 等待完善
-        pass
+        '''
+            获取所有岗位类型
+        :return:
+        '''
+        work_type_url = "https://www.lagou.com/"
+        result = self.crawler_request.get(url=work_type_url, clear_cookie=True)
+        work_type_regx = re.compile(r'<a href="https://www\.lagou\.com/zhaopin/.*" data-lg-tj-id=".*" data-lg-tj-no=".*" data-lg-tj-cid=".*".*>(.*)</a>')
+        # 使用正则表达式获取匹配的城市列表: 存在重复数据需要做一次去重
+        self.work_type_list = list(set(work_type_regx.findall(result)))
 
     def crawler_city_list(self):
         '''
@@ -84,7 +93,7 @@ class LagouCrawler:
                                 if json_result['content']['positionResult']['result']:
                                     json_job_list = json_result['content']['positionResult']['result']
                                     for json_job in json_job_list:
-                                        lagouSqlOperate.save(json_job)
+                                        lagouSqlOperate.save(json_job, work_type)
                         else:
                             print("【%s】暂无【%s】岗位信息"%(city, work_type))
 
@@ -98,6 +107,15 @@ class LagouCrawler:
                         self.__retry_init_cookie(work_type=work_type, city=city)
                         continue
                     break
+        else:
+            #获取当前类别下的有问题的城市
+            city_list = self.except_data.get(work_type)
+            #如果城市不存在，初始化
+            if city_list:
+                city_list = []
+            #存储有问题的数据：用来追溯
+            city_list.append(city)
+            self.except_data[work_type] = city_list;
 
     def __crawler_set_cookie(self, work_type, city):
         '''
@@ -108,6 +126,7 @@ class LagouCrawler:
         '''
         count = 0
         while (True):
+            print("初始化cookie第%d次"%count)
             #构建获取cookie的url
             init_cookie_url = StringUtils.formart_temp("https://www.lagou.com/jobs/list_{}?city={}", work_type, city)
             #发送请求：获取cookie、获取页面页码
@@ -118,10 +137,12 @@ class LagouCrawler:
             try:
                 job_page_total_number = job_page_total_number_regx.search(result).group(1)
             except:
+                print("初始化cookie异常")
                 count += 1;
                 if count == 2:
                     # 匹配异常，返回exception
                     return 'exception';
+                time.sleep(10)
                 continue
             else:
                 return job_page_total_number
@@ -144,13 +165,25 @@ if __name__ == '__main__':
     lagouCrawler = LagouCrawler()
     #获取城市信息
     lagouCrawler.crawler_city_list()
-    #引入多进程,加速抓取
-    processPool = multiprocessing.Pool(3)
-
+    #抓取工作类别
+    lagouCrawler.crawler_work_type_list()
+    # 引入多进程,加速抓取
+    processPool = multiprocessing.Pool(4)
+    # 爬取所有类别的所有信息
+    # for work_type in lagouCrawler.work_type_list:
+    #     for city in lagouCrawler.city_list:
+    #         print('开始爬取【%s】=【%s】岗位信息' %(city, work_type))
+    #         # 使用非阻塞方法
+    #         processPool.apply_async(lagouCrawler.crawler_job_info, args=(work_type, city))
     for city in lagouCrawler.city_list:
-        print('开始爬取%s岗位信息'%city)
-        # lagouCrawler.crawler_job_info('python', '北京')
-        #使用非阻塞方法
-        processPool.apply_async(lagouCrawler.crawler_job_info, args=('python', city))
+        print('开始爬取【%s】=【%s】岗位信息' % (city, 'Java'))
+        # 使用非阻塞方法
+        processPool.apply_async(lagouCrawler.crawler_job_info, args=('Java', city))
     processPool.close()
     processPool.join()
+    #输出问题数据
+    print(lagouCrawler.except_data)
+
+
+
+

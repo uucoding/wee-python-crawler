@@ -76,12 +76,12 @@ class CrawlerRequest(ProxyIpPool):
                 if method == 'GET':
                     # verify = False关掉ssl校验
                     if use_proxies:
-                        response = self.session.get(url=url, verify=False, proxies=proxy, timeout=6, **headers)
+                        response = self.session.get(url=url, verify=False, proxies=proxy, timeout=8, **headers)
                     else:
-                        response = self.session.get(url=url, verify=False, timeout=6, **headers)
+                        response = self.session.get(url=url, verify=False, timeout=8, **headers)
                 elif method == 'POST':
                     if use_proxies:
-                       response = self.session.post(url=url, data=data, verify=False, proxies=proxy, timeout=6, **headers)
+                       response = self.session.post(url=url, data=data, verify=False, proxies=proxy, timeout=8, **headers)
                     else:
                         response = self.session.post(url=url, data=data, verify=False, timeout=6, **headers)
                 else:

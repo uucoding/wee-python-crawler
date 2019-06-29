@@ -38,6 +38,8 @@ class LagouPosition(Base):
     company_label_list = Column(String(length=200), nullable=True, comment='公司福利标签')
     # 岗位名称
     position_name = Column(String(length=50), nullable=True, comment='岗位名称')
+    # 岗位类别
+    work_type = Column(String(length=30), nullable=True, comment='岗位类别')
     # 岗位性质
     job_nature = Column(String(length=20), nullable=True, comment='岗位性质')
     # 工作年限

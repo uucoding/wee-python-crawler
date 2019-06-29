@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 import time
 
-from com.weecoding.crawler.recruitment.lagou.lagou_position import LagouPosition
+from com.weecoding.crawler.web.lagou.lagou_position import LagouPosition
 from com.weecoding.crawler.utils.sql_utils import DBSession
 from com.weecoding.crawler.utils.string_utils import StringUtils
 
@@ -13,7 +13,7 @@ class LagouSqlOperate:
         # 获取操作数据库的session
         self.sql_session = DBSession()
 
-    def save(self, job_json):
+    def save(self, job_json, work_type):
         # 获取当前时间
         now = time.strftime("%Y-%m-%d", time.localtime())
         # 判断是否有重复，有就不抓
@@ -26,13 +26,13 @@ class LagouSqlOperate:
             return
         else:
             #构建数据
-            data = self.create_lagou_position(job_json, now)
+            data = self.create_lagou_position(job_json, work_type, now)
             # 插入数据、并提交
             self.sql_session.add(data)
             self.sql_session.commit()
             print("新增岗位:%s"%job_json['positionId'])
 
-    def create_lagou_position(self, job_json, now):
+    def create_lagou_position(self, job_json, work_type, now):
         '''
             构建待提交数据
         :param job_json:
@@ -65,6 +65,8 @@ class LagouSqlOperate:
             company_label_list=StringUtils.join(job_json['companyLabelList']),
             # 岗位名称
             position_name=job_json['positionName'],
+            # 岗位名称
+            work_type=work_type,
             # 岗位性质
             job_nature=job_json['jobNature'],
             # 工作年限
