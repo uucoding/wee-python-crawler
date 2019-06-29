@@ -4,6 +4,7 @@
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 
+from com.weecoding.crawler.request.abuyun_proxy_ip import AbuyunProxy
 from com.weecoding.crawler.request.proxy_ip import ProxyIpPool
 
 
@@ -38,15 +39,6 @@ class CrawlerRequest(ProxyIpPool):
         '''
         return self.__request(method='POST', url=url, data=data, clear_cookie=clear_cookie, **headers)
 
-    def search_url(self, formart_url, search_key):
-        '''
-            模版url的转化：参考__main__的示例
-        :param formart_url: 模版URL 使用{}设置模版
-        :param search_key:  需要替换模版的变量 - 集合形式
-        :return:
-        '''
-        return formart_url.format(*search_key)
-
 
     def __request(self, method, url, data=None, clear_cookie=False, **headers):
         '''
@@ -63,15 +55,12 @@ class CrawlerRequest(ProxyIpPool):
             headers = {
                 "headers": self.default_headers
             }
-        #设置阿布云代理（新用户可以免费适用一小时）
-        # proxy_info = self.search_url("http://{}:{}@{}:{}", ['HH61OT5D4ZAZ8MZD', '93FB7F6730FB318E', 'http-dyn.abuyun.com', '9020'])
-        # proxy = {
-        #     'http': proxy_info,
-        #     'https': proxy_info
-        # }
-        #获取代理ip配置
-        proxy = self.get_can_use_proxy_ip()
         # proxy = {}
+        #获取免费代理ip配置：不稳定
+        # proxy = self.get_can_use_proxy_ip()
+        #阿布云代理：新用可以免费使用一小时
+        proxy = AbuyunProxy.get_ip()
+        # print(proxy)
         #如果代理为空，表示代理不存在，那么使用本地
         if proxy == {}:
             use_proxies = False
@@ -88,7 +77,6 @@ class CrawlerRequest(ProxyIpPool):
                     # verify = False关掉ssl校验
                     if use_proxies:
                         response = self.session.get(url=url, verify=False, proxies=proxy, timeout=6, **headers)
-                        print(response)
                     else:
                         response = self.session.get(url=url, verify=False, timeout=6, **headers)
                 elif method == 'POST':
@@ -116,7 +104,4 @@ class CrawlerRequest(ProxyIpPool):
 
 
 if __name__ == '__main__':
-    crawler = CrawlerRequest()
-    formart_url = "https://www.lagou.com/jobs/list_{}?city={}"
-    url = crawler.search_url(formart_url, ['前端','北京'])
-    print(url)
+    pass

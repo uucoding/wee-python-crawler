@@ -1,10 +1,13 @@
 #!/usr/local/bin/python
 # -*- coding: UTF-8 -*-
+import json
 import re
 import time
 import multiprocessing
 
 from com.weecoding.crawler.request.request import CrawlerRequest
+from com.weecoding.crawler.utils.string_utils import StringUtils
+
 
 class LagouCrawler:
     '''
@@ -55,20 +58,23 @@ class LagouCrawler:
         if total_page != 'exception':
             for page in range(1, int(total_page) + 1):
                 # 组装获取job的url
-                job_url = self.crawler_request.search_url(
-                    "https://www.lagou.com/jobs/positionAjax.json?city={}&needAddtionalResult=false",
-                    [city])
+                job_url = StringUtils.formart_temp(
+                    "https://www.lagou.com/jobs/positionAjax.json?city={}&needAddtionalResult=false",city)
                 # 组装referer URL
-                referer_url = self.crawler_request.search_url(
-                    "https://www.lagou.com/jobs/list_{}?city={}&cl=false&fromSearch=true&labelWords=&suginput=",
-                    [work_type, city])
+                referer_url = StringUtils.formart_temp(
+                    "https://www.lagou.com/jobs/list_{}?city={}&cl=false&fromSearch=true&labelWords=&suginput=", work_type, city)
                 # referer的url需要编码
                 self.headers['Referer'] = referer_url.encode();
                 # 获取招聘信息: 此处可能会产生错误，所以需要重试机制
                 while (True):
                     try:
                         result = self.crawler_request.post(url=job_url, headers=self.headers)
-                        print(result)
+                        #文本转成json
+                        json_result = json.loads(result)
+                        #获取工作信息
+                        json_job_list = json_result['content']['positionResult']['result']
+                        for json_job in json_job_list:
+                            print(json_job)
                     except:
                         print("请求异常：准备重试")
                         self.__retry_init_cookie(work_type=work_type, city=city)
@@ -87,7 +93,7 @@ class LagouCrawler:
         :return:
         '''
         #构建获取cookie的url
-        init_cookie_url = self.crawler_request.search_url("https://www.lagou.com/jobs/list_{}?city={}", [work_type, city])
+        init_cookie_url = StringUtils.formart_temp("https://www.lagou.com/jobs/list_{}?city={}", work_type, city)
         #发送请求：获取cookie、获取页面页码
         result = self.crawler_request.get(url=init_cookie_url)
         #设置获取页码的正则
@@ -122,8 +128,10 @@ if __name__ == '__main__':
     lagouCrawler.crawler_city_list()
     #引入多进程
     processPool = multiprocessing.Pool(3)
+    print(lagouCrawler.city_list)
     #
     for city in lagouCrawler.city_list:
+        # lagouCrawler.crawler_job_info('python', '北京')
         processPool.apply_async(lagouCrawler.crawler_job_info, args=('python', '北京'))
         break;
     processPool.close()

@@ -39,7 +39,7 @@ class ProxyIpPool(object):
             # 如果代理不存在，先初始化代理
             if len(self.ip_port_pool) == 0:
                 self.__crawler_proxy_ip()
-                print(self.ip_port_pool)
+                print("ip代理池: %s"%self.ip_port_pool)
                 count = count + 1
                 continue;
             else:
@@ -57,15 +57,21 @@ class ProxyIpPool(object):
                     try:
                         # 校验代理是否可用
                         response = requests.get(url="http://www.baidu.com", verify=False, proxies=proxy, timeout=6, headers=self.default_headers)
+                        print(response)
                         # 如果状态码是200则表示代理可用：返回代理
                         if 200 == response.status_code:
-                            print(proxy)
+                            print('使用代理%s'%proxy)
+                            #将当前代理向后追加
+                            self.ip_port_pool.append(self.ip_port_pool[index])
+                            #删掉当前代理
+                            self.ip_port_pool.pop(index)
                             return proxy
                         else:
                             # 删除不可用的ip
                             self.ip_port_pool.pop(index)
                             continue
                     except:
+                        print("----")
                         #删除不可用的ip
                         self.ip_port_pool.pop(index)
                         continue
