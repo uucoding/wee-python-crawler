@@ -5,6 +5,7 @@ import re
 import time
 import multiprocessing
 
+from com.weecoding.crawler.recruitment.lagou.lagou_sql_operate import lagouSqlOperate
 from com.weecoding.crawler.request.request import CrawlerRequest
 from com.weecoding.crawler.utils.string_utils import StringUtils
 
@@ -55,8 +56,10 @@ class LagouCrawler:
         '''
         #初始化cookie，并获取页码
         total_page = self.__crawler_set_cookie(work_type=work_type, city=city)
+        print("【%s】暂无【%s】岗位信息，共计【%s】页" % (city, work_type, total_page))
         if total_page != 'exception':
             for page in range(1, int(total_page) + 1):
+                print("【%s】爬取【%s】岗位,第【%s】页" % (city, work_type, page))
                 # 组装获取job的url
                 job_url = StringUtils.formart_temp(
                     "https://www.lagou.com/jobs/positionAjax.json?city={}&needAddtionalResult=false",city)
@@ -68,13 +71,24 @@ class LagouCrawler:
                 # 获取招聘信息: 此处可能会产生错误，所以需要重试机制
                 while (True):
                     try:
-                        result = self.crawler_request.post(url=job_url, headers=self.headers)
+                        data = {
+                            "pn": page,
+                            "kd": work_type
+                        }
+                        result = self.crawler_request.post(url=job_url, data=data, headers=self.headers)
                         #文本转成json
                         json_result = json.loads(result)
                         #获取工作信息
-                        json_job_list = json_result['content']['positionResult']['result']
-                        for json_job in json_job_list:
-                            print(json_job)
+                        if json_result['content']:
+                            if json_result['content']['positionResult']:
+                                if json_result['content']['positionResult']['result']:
+                                    json_job_list = json_result['content']['positionResult']['result']
+                                    for json_job in json_job_list:
+                                        lagouSqlOperate.save(json_job)
+                        else:
+                            print("【%s】暂无【%s】岗位信息"%(city, work_type))
+
+
                     except:
                         print("请求异常：准备重试")
                         self.__retry_init_cookie(work_type=work_type, city=city)
@@ -92,21 +106,25 @@ class LagouCrawler:
         :param city: 城市
         :return:
         '''
-        #构建获取cookie的url
-        init_cookie_url = StringUtils.formart_temp("https://www.lagou.com/jobs/list_{}?city={}", work_type, city)
-        #发送请求：获取cookie、获取页面页码
-        result = self.crawler_request.get(url=init_cookie_url)
-        #设置获取页码的正则
-        job_page_total_number_regx = re.compile(r'<span class="span\stotalNum">(\d+)</span>')
-
-        #获取页码
-        try:
-            job_page_total_number = job_page_total_number_regx.search(result).group(1)
-        except:
-            #匹配异常，返回exception
-            return 'exception';
-        else:
-            return job_page_total_number
+        count = 0
+        while (True):
+            #构建获取cookie的url
+            init_cookie_url = StringUtils.formart_temp("https://www.lagou.com/jobs/list_{}?city={}", work_type, city)
+            #发送请求：获取cookie、获取页面页码
+            result = self.crawler_request.get(url=init_cookie_url)
+            #设置获取页码的正则
+            job_page_total_number_regx = re.compile(r'<span class="span\stotalNum">(\d+)</span>')
+            #获取页码
+            try:
+                job_page_total_number = job_page_total_number_regx.search(result).group(1)
+            except:
+                count += 1;
+                if count == 2:
+                    # 匹配异常，返回exception
+                    return 'exception';
+                continue
+            else:
+                return job_page_total_number
 
     def __retry_init_cookie(self, work_type, city):
         '''
@@ -126,13 +144,13 @@ if __name__ == '__main__':
     lagouCrawler = LagouCrawler()
     #获取城市信息
     lagouCrawler.crawler_city_list()
-    #引入多进程
+    #引入多进程,加速抓取
     processPool = multiprocessing.Pool(3)
-    print(lagouCrawler.city_list)
-    #
+
     for city in lagouCrawler.city_list:
+        print('开始爬取%s岗位信息'%city)
         # lagouCrawler.crawler_job_info('python', '北京')
-        processPool.apply_async(lagouCrawler.crawler_job_info, args=('python', '北京'))
-        break;
+        #使用非阻塞方法
+        processPool.apply_async(lagouCrawler.crawler_job_info, args=('python', city))
     processPool.close()
     processPool.join()

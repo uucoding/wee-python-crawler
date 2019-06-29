@@ -5,7 +5,7 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 
 from com.weecoding.crawler.request.abuyun_proxy_ip import AbuyunProxy
-from com.weecoding.crawler.request.proxy_ip import ProxyIpPool
+from com.weecoding.crawler.request.free_proxy_ip import ProxyIpPool
 
 
 #关闭ssl校验后，会有⚠️信息，此处可以消除⚠️0

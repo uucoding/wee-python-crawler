@@ -86,6 +86,7 @@ class ProxyIpPool(object):
 
         #获取响应数据
         response = requests.get(url=proxy_ip_url, headers=self.default_headers)
+        print("获取免费代理状态：%s"%response)
         #获取响应内容
         result = response.text;
         #获取所有的ip
