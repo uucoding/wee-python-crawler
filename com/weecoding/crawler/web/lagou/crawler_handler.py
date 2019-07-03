@@ -65,7 +65,7 @@ class LagouCrawler:
         '''
         #初始化cookie，并获取页码
         total_page = self.__crawler_set_cookie(work_type=work_type, city=city)
-        print("【%s】暂无【%s】岗位信息，共计【%s】页" % (city, work_type, total_page))
+        print("【%s】【%s】岗位信息，共计【%s】页" % (city, work_type, total_page))
         if total_page != 'exception':
             for page in range(1, int(total_page) + 1):
                 print("【%s】爬取【%s】岗位,第【%s】页" % (city, work_type, page))
@@ -96,14 +96,12 @@ class LagouCrawler:
                                         lagouSqlOperate.save(json_job, work_type)
                         else:
                             print("【%s】暂无【%s】岗位信息"%(city, work_type))
-
-
                     except:
-                        print("请求异常：准备重试")
+                        print("请求岗位异常：重新加载cookie")
                         self.__retry_init_cookie(work_type=work_type, city=city)
                         continue
                     if "您操作太频繁,请稍后再访问" in result:
-                        print("操作频繁：准备重试")
+                        print("操作频繁：重新加载cookie")
                         self.__retry_init_cookie(work_type=work_type, city=city)
                         continue
                     break
@@ -126,7 +124,7 @@ class LagouCrawler:
         '''
         count = 0
         while (True):
-            print("初始化cookie第%d次"%count)
+            print("初始化cookie")
             #构建获取cookie的url
             init_cookie_url = StringUtils.formart_temp("https://www.lagou.com/jobs/list_{}?city={}", work_type, city)
             #发送请求：获取cookie、获取页面页码
@@ -135,14 +133,16 @@ class LagouCrawler:
             job_page_total_number_regx = re.compile(r'<span class="span\stotalNum">(\d+)</span>')
             #获取页码
             try:
+                #网络问题 or 重定向 会导致拉钩页面获取不到页码，此时会抛出异常，需要重试
                 job_page_total_number = job_page_total_number_regx.search(result).group(1)
             except:
-                print("初始化cookie异常")
-                count += 1;
+                count += 1
                 if count == 2:
                     # 匹配异常，返回exception
-                    return 'exception';
-                time.sleep(10)
+                    return 'exception'
+                # 重新初始化cookie
+                print("获取页码异常：重新初始化cookie")
+                self.__retry_init_cookie(work_type, city)
                 continue
             else:
                 return job_page_total_number
@@ -176,9 +176,10 @@ if __name__ == '__main__':
     #         # 使用非阻塞方法
     #         processPool.apply_async(lagouCrawler.crawler_job_info, args=(work_type, city))
     for city in lagouCrawler.city_list:
-        print('开始爬取【%s】=【%s】岗位信息' % (city, 'Java'))
+        print('开始爬取【%s】=>【%s】岗位信息!' % (city, 'Java'))
         # 使用非阻塞方法
         processPool.apply_async(lagouCrawler.crawler_job_info, args=('Java', city))
+        break
     processPool.close()
     processPool.join()
     #输出问题数据

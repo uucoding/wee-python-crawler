@@ -16,10 +16,9 @@ class LagouSqlOperate:
     def save(self, job_json, work_type):
         # 获取当前时间
         now = time.strftime("%Y-%m-%d", time.localtime())
-        # 判断是否有重复，有就不抓
-        result = self.sql_session.query(LagouPosition).filter(LagouPosition.create_time == now,
-                                                              LagouPosition.position_id == job_json[
-                                                                  'positionId']).first()
+        # 判断是否有重复，有就不抓：根据positionId判断是否重复
+        result = self.sql_session.query(LagouPosition).filter(LagouPosition.position_id == job_json[
+                                                                 'positionId']).first()
         if result:
             print("当前岗位信息已经存在：%s:%s:%s:%s" % (
             job_json['city'], job_json['companyShortName'], job_json['positionName'], job_json['positionId']))

@@ -4,9 +4,7 @@
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 
-from com.weecoding.crawler.request.abuyun_proxy_ip import AbuyunProxy
 from com.weecoding.crawler.request.free_proxy_ip import ProxyIpPool
-
 
 #关闭ssl校验后，会有⚠️信息，此处可以消除⚠️0
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -57,9 +55,9 @@ class CrawlerRequest(ProxyIpPool):
             }
         # proxy = {}
         #获取免费代理ip配置：不稳定
-        # proxy = self.get_can_use_proxy_ip()
+        proxy = self.get_can_use_proxy_ip()
         #阿布云代理：新用可以免费使用一小时
-        proxy = AbuyunProxy.get_ip()
+        # proxy = AbuyunProxy.get_ip()
         # print(proxy)
         #如果代理为空，表示代理不存在，那么使用本地
         if proxy == {}:

@@ -56,7 +56,7 @@ class ProxyIpPool(object):
                     # 测试ip是否可用：如果可用跳出直接使用，否则重试
                     try:
                         # 校验代理是否可用
-                        response = requests.get(url="http://www.baidu.com", verify=False, proxies=proxy, timeout=6, headers=self.default_headers)
+                        response = requests.get(url="https://www.baidu.com/", verify=False, proxies=proxy, timeout=6, headers=self.default_headers)
                         print(response)
                         # 如果状态码是200则表示代理可用：返回代理
                         if 200 == response.status_code:
@@ -71,7 +71,7 @@ class ProxyIpPool(object):
                             self.ip_port_pool.pop(index)
                             continue
                     except:
-                        print("----")
+                        print('=====')
                         #删除不可用的ip
                         self.ip_port_pool.pop(index)
                         continue
@@ -80,6 +80,7 @@ class ProxyIpPool(object):
     def __crawler_proxy_ip(self):
         '''
             爬取代理ip（只获取第一页，越往后ip越不稳定）：https://www.xicidaili.com/nn/1
+            这个免费代理库比上面一个似乎稳定一些，未爬取，需要的可以看看：http://www.89ip.cn/index.html
         :return:
         '''
         proxy_ip_url = 'https://www.xicidaili.com/nn/1';
